@@ -21,13 +21,16 @@ skills/mcp-builder-ui/
 │   ├── mcp_best_practices.md       # naming, responses, pagination, transport, security
 │   ├── node_mcp_server.md          # TypeScript / MCP SDK guide
 │   ├── python_mcp_server.md        # Python / FastMCP guide
+│   ├── app_design.md               # ← what is worth building in a conversation
 │   ├── mcp_apps_ui.md              # ← MCP Apps: ui:// resources, App SDK, theming, CSP
+│   ├── python_mcp_apps.md          # ← MCP Apps from a FastMCP server
+│   ├── migrate_openai_app.md       # ← porting from window.openai / Apps SDK
 │   └── evaluation.md               # writing and running evaluations
-└── scripts/
-    ├── evaluation.py               # evaluation runner
-    ├── connections.py              # MCP connection helpers
-    ├── example_evaluation.xml
-    └── requirements.txt
+├── evals/                          # test cases for the skill itself
+└── scripts/                        # evaluation runner for your MCP server
+
+examples/
+└── issue-board/                    # runnable reference implementation
 ```
 
 ## The workflow
@@ -52,6 +55,11 @@ The skill treats UI as **strictly additive**: every App tool keeps its text
 
 What it covers that a rendering tutorial doesn't:
 
+- **What's worth building at all.** Every other guide starts at "here's how to
+  render." This one starts a step earlier: the read-aloud test, when a view helps
+  and when it's a box around a sentence, how to design the loop instead of the
+  screen, and a review rubric whose first question is *switch the view off — does
+  the model's answer still work?*
 - **The conversational loop.** `updateModelContext` and `sendMessage`, so the model
   knows what the user selected in the view. Without this, the user clicks a point
   on your map, asks "what about this place?", and the model has no idea what
@@ -66,6 +74,12 @@ What it covers that a rendering tutorial doesn't:
   streaming partial input.
 - **Signatures verified against the SDK sources**, not against prose docs — several
   of which disagree with each other.
+- **Python.** There is no Python MCP Apps SDK. The server side is FastMCP `meta=`,
+  the view side is JavaScript, and the two strategies for bridging them have
+  different trade-offs. Nobody had written this down.
+- **A runnable example.** [`examples/issue-board`](./examples/issue-board/) — an
+  App tool, an app-only mutation tool, and a view that keeps the model in the
+  loop. Type-checks, builds, and was exercised against a live server.
 
 Supported hosts include Claude, ChatGPT, VS Code, Goose, Postman and MCPJam.
 

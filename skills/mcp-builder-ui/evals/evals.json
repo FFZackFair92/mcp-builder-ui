@@ -1,0 +1,74 @@
+{
+  "skill_name": "mcp-builder-ui",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I have an MCP server in TypeScript with a get_revenue tool that returns monthly revenue rows. Add an interactive chart UI so it renders in the chat.",
+      "expected_output": "An App tool wired to a ui:// resource, with a text content fallback that summarises the revenue in prose, structuredContent for the chart, a single-file Vite build, host CSS variables, and updateModelContext when the user interacts with the chart.",
+      "files": [],
+      "expectations": [
+        "The tool result keeps a text content array that summarises the revenue figures in prose, not a placeholder like 'Rendered chart'",
+        "structuredContent carries the row data for the view",
+        "The tool declares _meta.ui.resourceUri and a matching registerAppResource is created",
+        "registerAppResource is called with the positional signature (server, name, uri, config, readCallback)",
+        "The Vite config uses vite-plugin-singlefile",
+        "All view handlers are assigned before app.connect() is called",
+        "The view reads app.getHostContext() after connecting, not only onhostcontextchanged",
+        "The view calls updateModelContext when the user changes the chart selection or filter",
+        "The view styles come from host CSS variables such as --color-background-primary rather than hardcoded colors"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "My MCP App view needs to fetch live prices from https://api.exchange.example.com. Wire that up.",
+      "expected_output": "CSP configured as _meta.ui.csp.connectDomains inside the contents[] object returned by the resource read callback, with an explanation of why misplacing it fails silently.",
+      "files": [],
+      "expectations": [
+        "The csp block is placed inside the contents[] object returned by the resource read callback, not in the registerAppResource config object",
+        "The domain is listed under connectDomains, not resourceDomains",
+        "The response explains that a sandboxed MCP App has no same-origin server so every network target must be declared",
+        "The response does not invent a top-level connectDomains field on the resource config"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "I have a Python MCP server built with FastMCP. Can I give one of its tools an interactive UI in Claude, and how?",
+      "expected_output": "Explains that there is no Python MCP Apps SDK, that the server side is FastMCP meta= and the view side is JavaScript, and shows both the CDN and bundled strategies with their trade-offs.",
+      "files": [],
+      "expectations": [
+        "States that @modelcontextprotocol/ext-apps is TypeScript only and there is no Python SDK",
+        "Uses @mcp.tool(meta={...}) with ui.resourceUri for the tool",
+        "Uses @mcp.resource with mime_type exactly 'text/html;profile=mcp-app'",
+        "Notes that in FastMCP the csp metadata goes in the decorator's meta= parameter",
+        "Offers both a CDN-loaded view and a bundled single-file view, with trade-offs",
+        "If a CDN is used, the CDN origin is added to resourceDomains and the version is pinned"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "My MCP server has a create_file tool that returns a success message. Should I add a UI to it? Add one if it makes sense.",
+      "expected_output": "Declines to build a view, explaining that a confirmation message gains nothing from a view and that views cost vertical space, a permission prompt and a load.",
+      "files": [],
+      "expectations": [
+        "Recommends against adding a view for this tool",
+        "Justifies the recommendation with the read-aloud test or an equivalent argument about perception, manipulation and volume",
+        "Mentions at least one concrete cost of an unnecessary view (vertical space in the conversation, permission prompt, or load)",
+        "Does not produce a ui:// resource or App tool for create_file unless the user insists"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Build me an MCP server for a public issue tracker API, with a view that lets me filter issues and close them, and make sure Claude can still answer questions about the issues.",
+      "expected_output": "A complete server with an App tool, an app-only mutation tool, a view that reports back to the model, and a text content summary that stands on its own.",
+      "files": [],
+      "expectations": [
+        "The list tool's content array contains a prose summary that would answer a question about the issues with the view switched off",
+        "The close/mutate tool is registered with _meta.ui.visibility set to ['app']",
+        "After the view closes an issue, it informs the model with updateModelContext",
+        "The view calls the mutation through app.callServerTool with an object argument of the form { name, arguments }",
+        "onteardown releases timers or observers created by the view",
+        "The response verifies the build compiles or explains how to run and test the server"
+      ]
+    }
+  ]
+}

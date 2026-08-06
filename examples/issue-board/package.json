@@ -1,0 +1,29 @@
+{
+  "name": "@example/issue-board-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Minimal MCP Apps example: an issue board that keeps the model in the loop",
+  "scripts": {
+    "build:ui": "vite build",
+    "build:server": "tsc",
+    "build": "npm run build:ui && npm run build:server",
+    "serve": "node dist/main.js",
+    "start": "npm run build && npm run serve"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/ext-apps": "^1.7.5",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.1.2",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.1",
+    "vite-plugin-singlefile": "^2.3.3"
+  }
+}

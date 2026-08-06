@@ -533,6 +533,16 @@ function computeAppDomainForClaude(mcpServerUrl: string): string {
 
 The domain format is host-specific — check the host's documentation.
 
+Two more keys live alongside `csp` and `domain` in the same `_meta.ui` object:
+
+- `permissions` — request `camera`, `microphone`, `geolocation` or `clipboard`.
+  Ask for these only when the user reaches for the feature that needs them; a view
+  that demands the microphone on mount gets denied.
+- `prefersBorder` — hint that the host should draw a visual boundary around the
+  view.
+
+`csp` also accepts `baseUriDomains` for the `base-uri` directive.
+
 ---
 
 ## 10. Production patterns

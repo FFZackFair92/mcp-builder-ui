@@ -40,6 +40,11 @@ Files modified from the original work:
 
 Files added in this derivative work:
   skills/mcp-builder-ui/reference/mcp_apps_ui.md
+  skills/mcp-builder-ui/reference/app_design.md
+  skills/mcp-builder-ui/reference/python_mcp_apps.md
+  skills/mcp-builder-ui/reference/migrate_openai_app.md
+  skills/mcp-builder-ui/evals/
+  examples/issue-board/
   README.md
   NOTICE
   .claude-plugin/marketplace.json

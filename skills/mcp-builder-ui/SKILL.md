@@ -1,6 +1,6 @@
 ---
 name: mcp-builder-ui
-description: Guide for creating high-quality MCP (Model Context Protocol) servers that enable LLMs to interact with external services through well-designed tools, optionally with interactive in-chat UIs (MCP Apps, SEP-1865). Use when building MCP servers to integrate external APIs or services in Python (FastMCP) or Node/TypeScript (MCP SDK), when adding interactive UI views that render inline in the conversation, or when migrating an existing server or OpenAI App to MCP Apps.
+description: Guide for creating high-quality MCP (Model Context Protocol) servers that enable LLMs to interact with external services through well-designed tools, optionally with interactive in-chat UIs (MCP Apps, SEP-1865). Use when building MCP servers to integrate external APIs or services in Python (FastMCP) or Node/TypeScript (MCP SDK), when adding an interactive UI, view, widget, chart, map or dashboard that renders inline in a Claude or ChatGPT conversation, when deciding whether a tool deserves a UI at all, or when migrating an OpenAI Apps SDK app (window.openai, openai/outputTemplate, text/html+skybridge) to MCP Apps.
 license: Apache-2.0. See LICENSE and NOTICE at the repository root.
 ---
 
@@ -72,7 +72,11 @@ Key pages to review:
 - [🐍 Python Guide](./reference/python_mcp_server.md) - Python patterns and examples
 
 **If the server will have interactive UIs:**
+- [🧭 Conversational App Design](./reference/app_design.md) - what to build and why
 - [🎨 MCP Apps UI Guide](./reference/mcp_apps_ui.md) - `ui://` resources, App SDK, host styling
+- [🐍 MCP Apps in Python](./reference/python_mcp_apps.md) - if the server is FastMCP
+- [🔄 Migrating from the OpenAI Apps SDK](./reference/migrate_openai_app.md) - if porting an existing app
+- [`examples/issue-board`](../../examples/issue-board/) - a small runnable server that puts it together
 
 #### 1.4 Plan Your Implementation
 
@@ -139,13 +143,30 @@ For each tool:
 Skip this phase if every tool is well served by text. Otherwise add interactive
 views that render inline in the conversation.
 
-**Load [🎨 MCP Apps UI Guide](./reference/mcp_apps_ui.md) for the complete guide.**
+**Load [🧭 Conversational App Design](./reference/app_design.md) first — it decides
+what to build. Then [🎨 MCP Apps UI Guide](./reference/mcp_apps_ui.md) for how.**
+
+Two situational guides: [🐍 MCP Apps in Python](./reference/python_mcp_apps.md) if
+the server is FastMCP (there is no Python SDK — the split is server in Python,
+view in JavaScript), and
+[🔄 Migrating from the OpenAI Apps SDK](./reference/migrate_openai_app.md) if
+porting an app built on `window.openai`.
+
+A small runnable reference implementation lives in
+[`examples/issue-board`](../../examples/issue-board/) — read its `server.ts` and
+`src/mcp-app.ts` before writing your own.
 
 #### 3.1 Decide Which Tools Get a UI
 
-Enhance a tool with a view when its output is structured data worth exploring,
-metrics worth charting, or rich media worth rendering. Leave simple lookups and
-confirmations as plain text. Present the shortlist to the user before building.
+Apply the read-aloud test: if the tool's result could be read aloud over the phone
+and be just as useful, it doesn't need a view. A view earns its place only by
+adding **perception** (structure that lives in space or time), **manipulation**
+(input the model can't produce — dragging, selecting, reordering), or **scannable
+volume**.
+
+Leave simple lookups, confirmations and single values as plain text. Views cost
+the user vertical space, a permission prompt and a load — one excellent view beats
+five decorative ones. Present the shortlist to the user before building.
 
 #### 3.2 Core Model
 
@@ -232,6 +253,13 @@ git clone --branch "v$(npm view @modelcontextprotocol/ext-apps version)" --depth
 ```
 
 `src/app.examples.ts` and `src/server/index.examples.ts` are the authority.
+
+#### 3.7 Review Before Shipping
+
+Run the 10-question rubric at the end of
+[🧭 Conversational App Design](./reference/app_design.md). The first question —
+*switch the view off; does `content` still answer the user's question?* — catches
+the most common serious failure, a beautiful dashboard that leaves the model blind.
 
 ---
 
@@ -355,7 +383,16 @@ Load these resources as needed during development:
   - Complete working examples
   - Quality checklist
 
-### Interactive UI Guide (Load During Phase 3)
+### Interactive UI Guides (Load During Phase 3)
+- [🧭 Conversational App Design](./reference/app_design.md) - What is worth building:
+  - The three consumers of a tool result and how to serve all of them
+  - The read-aloud test; when a view helps and when it hurts
+  - Designing the loop (call → render → act → return) rather than the screen
+  - Granularity and shape of `updateModelContext`; `sendMessage` etiquette
+  - Space etiquette inside someone else's conversation
+  - Cold-start design, view state vs. user effort, trust and permissions
+  - Seven anti-patterns, a worked example, and a 10-question review rubric
+
 - [🎨 MCP Apps UI Guide](./reference/mcp_apps_ui.md) - Complete MCP Apps guide with:
   - When a tool deserves a UI
   - `ui://` resources, `_meta.ui.resourceUri`, tool visibility
@@ -370,6 +407,19 @@ Load these resources as needed during development:
   - Production patterns: polling, offscreen pause, chunked loading,
     `viewUUID` state persistence, streaming input
   - Testing with the reference host and with Claude Desktop
+
+- [🐍 MCP Apps in Python](./reference/python_mcp_apps.md) - FastMCP servers:
+  - Why there is no Python SDK and where the language boundary falls
+  - `@mcp.tool(meta=...)` and `@mcp.resource(mime_type=..., meta=...)`
+  - CDN vs. bundled view strategies and their trade-offs
+  - Dual stdio/HTTP transport, PEP 723 single-file servers
+  - Python-specific gotchas that fail silently
+
+- [🔄 Migrating from the OpenAI Apps SDK](./reference/migrate_openai_app.md):
+  - The CSP audit to run before writing any migration code
+  - Full metadata, CSP, context and method mapping tables
+  - What has no MCP equivalent yet, and what to use instead
+  - A grep-based finishing checklist
 
 ### Evaluation Guide (Load During Phase 5)
 - [✅ Evaluation Guide](./reference/evaluation.md) - Complete evaluation creation guide with:
