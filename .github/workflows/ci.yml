@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Manifests, skill frontmatter, relative links, evals, and regression
+      # guards for the API mistakes that fail silently at runtime.
+      - name: Validate
+        run: python tools/validate.py
+
+      - name: Compile evaluation scripts
+        run: python -m compileall -q skills/mcp-builder-ui/scripts
+
+  example:
+    name: Build the example
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: examples/issue-board
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # No lockfile is committed: the example should keep working against
+      # current SDK releases, and CI is where we find out when it stops.
+      - name: Install
+        run: npm install
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      - name: Build view and server
+        run: npm run build
+
+      - name: Smoke-test the server over HTTP
+        run: |
+          node dist/main.js &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
+
+          for _ in $(seq 1 30); do
+            curl -sf -o /dev/null http://localhost:3001/mcp \
+              -X POST -H 'Content-Type: application/json' \
+              -H 'Accept: application/json, text/event-stream' \
+              -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"1"}}}' \
+              && break
+            sleep 1
+          done
+
+          call() {
+            curl -sf http://localhost:3001/mcp \
+              -X POST -H 'Content-Type: application/json' \
+              -H 'Accept: application/json, text/event-stream' -d "$1"
+          }
+
+          echo "→ tools/list advertises the UI resource and app-only visibility"
+          call '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' > tools.json
+          grep -q '"resourceUri":"ui://issue-board/mcp-app.html"' tools.json
+          grep -q '"visibility":\["app"\]' tools.json
+
+          echo "→ tools/call returns a prose summary, structured data and a viewUUID"
+          call '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"list_issues","arguments":{"status":"open"}}}' > result.json
+          grep -q '"viewUUID"' result.json
+          grep -q '"structuredContent"' result.json
+          # The content fallback must be a real answer, not a placeholder.
+          grep -q 'open issues' result.json
+
+          echo "→ resources/read serves the view with the MCP Apps MIME type"
+          call '{"jsonrpc":"2.0","id":4,"method":"resources/read","params":{"uri":"ui://issue-board/mcp-app.html"}}' > view.json
+          grep -q 'text/html;profile=mcp-app' view.json
+
+          echo "All smoke tests passed."

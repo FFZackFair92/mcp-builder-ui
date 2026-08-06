@@ -1,5 +1,8 @@
 # mcp-builder-ui
 
+[![CI](https://github.com/FFZackFair92/mcp-builder-ui/actions/workflows/ci.yml/badge.svg)](https://github.com/FFZackFair92/mcp-builder-ui/actions/workflows/ci.yml)
+[![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
+
 An Agent Skill for building high-quality **MCP servers** — including the
 interactive, in-chat UIs introduced by **MCP Apps** (SEP-1865).
 
@@ -127,6 +130,17 @@ Node 20+ and `@modelcontextprotocol/ext-apps`.
 - [MCP Apps spec (SEP-1865, 2026-01-26)](https://github.com/modelcontextprotocol/ext-apps/blob/main/specification/2026-01-26/apps.mdx)
 - [MCP Apps SDK & examples](https://github.com/modelcontextprotocol/ext-apps)
 - [MCP Apps Quickstart](https://apps.extensions.modelcontextprotocol.io/api/documents/Quickstart.html)
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). One rule above the others: never write an
+MCP Apps API signature from memory or from prose docs — verify it against the
+SDK's type-checked examples. This repo has already shipped three wrong signatures
+that way, and they all fail silently.
+
+```bash
+python tools/validate.py      # manifests, frontmatter, links, evals, regression guards
+```
 
 ## License
 

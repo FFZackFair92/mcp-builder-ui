@@ -45,6 +45,9 @@ Files added in this derivative work:
   skills/mcp-builder-ui/reference/migrate_openai_app.md
   skills/mcp-builder-ui/evals/
   examples/issue-board/
+  tools/validate.py
+  .github/workflows/ci.yml
+  CONTRIBUTING.md
   README.md
   NOTICE
   .claude-plugin/marketplace.json
