@@ -1,0 +1,56 @@
+mcp-builder-ui
+Copyright 2026 FFZackFair92
+
+This product includes software developed by Anthropic, PBC.
+
+Portions of this work are derived from the "mcp-builder" Agent Skill
+(https://github.com/anthropics/skills), Copyright Anthropic, PBC,
+licensed under the Apache License, Version 2.0.
+
+--------------------------------------------------------------------------------
+Modifications made in this derivative work
+--------------------------------------------------------------------------------
+
+Files taken from the original work unmodified:
+  skills/mcp-builder-ui/reference/mcp_best_practices.md
+  skills/mcp-builder-ui/reference/node_mcp_server.md
+  skills/mcp-builder-ui/reference/python_mcp_server.md
+  skills/mcp-builder-ui/reference/evaluation.md
+  skills/mcp-builder-ui/scripts/evaluation.py
+  skills/mcp-builder-ui/scripts/connections.py
+  skills/mcp-builder-ui/scripts/example_evaluation.xml
+  skills/mcp-builder-ui/scripts/requirements.txt
+
+Files modified from the original work:
+  skills/mcp-builder-ui/SKILL.md
+    - Renamed the skill from "mcp-builder" to "mcp-builder-ui" and extended its
+      description to cover interactive UI work.
+    - Added Phase 3, "Interactive UI with MCP Apps (Optional)", covering tool
+      selection for UI, the ui:// resource model, six non-negotiable rules, a
+      TypeScript implementation sketch, and app-only tools. The former Phase 3
+      (Review and Test) and Phase 4 (Create Evaluations) became Phases 4 and 5.
+    - Added a "Text vs. Interactive Output" note to section 1.1 and an MCP Apps
+      pointer to section 1.3.
+    - Noted in section 2.3 that structuredContent is what an MCP App view
+      consumes.
+    - Added MCP Apps verification steps to Phase 4.2.
+    - Clarified in Phase 5.1 that evaluations remain text-based even when the
+      server ships UIs.
+    - Added the MCP Apps guide to the Documentation Library.
+
+Files added in this derivative work:
+  skills/mcp-builder-ui/reference/mcp_apps_ui.md
+  README.md
+  NOTICE
+  .claude-plugin/marketplace.json
+  .claude-plugin/plugin.json
+
+--------------------------------------------------------------------------------
+Third-party references
+--------------------------------------------------------------------------------
+
+The MCP Apps guide describes the MCP Apps extension (SEP-1865) and the
+@modelcontextprotocol/ext-apps SDK, published by the Model Context Protocol
+project under the Apache License, Version 2.0
+(https://github.com/modelcontextprotocol/ext-apps). No code from that project is
+redistributed here.
