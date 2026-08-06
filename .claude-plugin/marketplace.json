@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "Agent Skill for building MCP servers with interactive in-chat UIs (MCP Apps / SEP-1865).",
-    "version": "1.0.0"
+    "version": "1.1.0"
   },
   "plugins": [
     {
       "name": "mcp-builder-ui",
       "source": "./",
       "description": "Build high-quality MCP servers in TypeScript or Python, optionally with MCP Apps views that render inline in the conversation.",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "author": {
         "name": "FFZackFair92"
       },

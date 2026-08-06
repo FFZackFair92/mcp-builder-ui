@@ -153,21 +153,29 @@ confirmations as plain text. Present the shortlist to the user before building.
   `text/html;profile=mcp-app`
 - The tool links to it via `_meta.ui.resourceUri`
 - The host renders it in a sandboxed iframe and exchanges JSON-RPC messages with it
-- The view can call server tools back through the host
+- The view calls server tools, reads resources, updates model context and sends
+  messages back through the host
 
 #### 3.3 Non-Negotiable Rules
 
 1. **UI is additive.** Always keep the text `content` array — text-only hosts must
    still get a usable answer. Never move information the model needs into the view.
-2. **Bundle to a single HTML file** (`vite-plugin-singlefile`); external asset URLs
+2. **Close the conversational loop.** Call `updateModelContext()` whenever the user
+   selects, filters or edits something. A view the model can't see is a picture,
+   not an app.
+3. **Bundle to a single HTML file** (`vite-plugin-singlefile`); external asset URLs
    do not resolve inside the sandbox.
-3. **Register all view handlers before `app.connect()`.**
-4. **Style from host CSS variables** (`--color-*`, `--font-*`, `--border-radius-*`)
-   so the view matches the surrounding chat in both themes.
-5. **Declare external domains** (`connectDomains`, `resourceDomains`,
-   `frameDomains`) or the CSP blocks them.
-6. **Degrade gracefully** — use `getUiCapability()` to register plain tools for
-   clients without UI support.
+4. **Register all view handlers before `app.connect()`**, and apply the initial
+   `getHostContext()` after — `onhostcontextchanged` only fires on changes.
+5. **Style from host CSS variables** (`--color-*`, `--font-*`, `--border-radius-*`)
+   with fallback values, so the view matches the surrounding chat in both themes.
+6. **Declare every network target** in `_meta.ui.csp` — including `localhost`. It
+   goes in the `contents[]` objects returned by the read callback, *not* in
+   `registerAppResource`'s config object.
+7. **Clean up in `onteardown`** — timers, observers, WebGL contexts.
+8. **Degrade gracefully** — use `getUiCapability()` to register plain tools for
+   clients without UI support, and gate optional features on
+   `getHostCapabilities()`.
 
 #### 3.4 Implementation Sketch (TypeScript)
 
@@ -178,12 +186,10 @@ import {
   RESOURCE_MIME_TYPE,
 } from "@modelcontextprotocol/ext-apps/server";
 
-const resourceUri = "ui://my-tool/mcp-app.html";
-
 registerAppTool(server, "my-tool", {
   description: "Shows data with an interactive UI",
   inputSchema: { param: z.string() },
-  _meta: { ui: { resourceUri } },
+  _meta: { ui: { resourceUri: "ui://my-tool/view.html" } },
 }, async (args) => {
   const data = await fetchData(args.param);
   return {
@@ -192,16 +198,40 @@ registerAppTool(server, "my-tool", {
   };
 });
 
-registerAppResource(server,
-  { uri: resourceUri, name: "My Tool UI", mimeType: RESOURCE_MIME_TYPE },
-  async () => ({ contents: [{ uri: resourceUri, mimeType: RESOURCE_MIME_TYPE, text: html }] }),
+// Signature is positional: (server, name, uri, config, readCallback)
+registerAppResource(
+  server,
+  "My Tool UI",
+  "ui://my-tool/view.html",
+  { description: "Interactive view for my-tool" },
+  async () => ({
+    contents: [{
+      uri: "ui://my-tool/view.html",
+      mimeType: RESOURCE_MIME_TYPE,
+      text: await fs.readFile("dist/mcp-app.html", "utf-8"),
+    }],
+  }),
 );
 ```
 
 #### 3.5 App-Only Tools
 
 Tools the view needs but the model shouldn't call (polling, pagination, chunk
-loading) get `_meta.ui.visibility: ["app"]`.
+loading, UI-driven mutations) get `_meta.ui.visibility: ["app"]`. This keeps their
+traffic out of the context window. The inverse, `["model"]`, blocks the view from
+calling a tool.
+
+#### 3.6 Verify Against the SDK Sources
+
+Prose documentation around this ecosystem disagrees on several API signatures.
+Before writing view code, clone the SDK and read its type-checked examples:
+
+```bash
+git clone --branch "v$(npm view @modelcontextprotocol/ext-apps version)" --depth 1 \
+  https://github.com/modelcontextprotocol/ext-apps.git /tmp/mcp-ext-apps
+```
+
+`src/app.examples.ts` and `src/server/index.examples.ts` are the authority.
 
 ---
 
@@ -226,9 +256,14 @@ Review for:
 - Test with MCP Inspector
 
 **If the server has MCP Apps views:**
-- Run the reference host from the SDK repo (`examples/basic-host`) and confirm each
-  view renders, receives `ontoolinput`/`ontoolresult`, and follows the host theme
+- Run the reference host from the SDK repo (`examples/basic-host`) for protocol-level
+  checks, then test in a real host (Claude Desktop via `claude_desktop_config.json`)
+- Confirm each view renders and receives `ontoolinput` / `ontoolresult`
+- Toggle the host theme while a view is open and confirm it follows
+- Ask the model about something you selected *in the view* — if it doesn't know,
+  `updateModelContext` is missing or wrong
 - Confirm every App tool still produces a sensible text-only response
+- Confirm nothing keeps running after `onteardown`
 
 See language-specific guides for detailed testing approaches and quality checklists.
 
@@ -323,14 +358,18 @@ Load these resources as needed during development:
 ### Interactive UI Guide (Load During Phase 3)
 - [🎨 MCP Apps UI Guide](./reference/mcp_apps_ui.md) - Complete MCP Apps guide with:
   - When a tool deserves a UI
-  - `ui://` resources and `_meta.ui.resourceUri` wiring
-  - `registerAppTool` / `registerAppResource` patterns
+  - `ui://` resources, `_meta.ui.resourceUri`, tool visibility
+  - `registerAppTool` / `registerAppResource` exact signatures
   - Vite single-file build pipeline
-  - View lifecycle (`ontoolinput`, `ontoolresult`, `onhostcontextchanged`, `onteardown`)
-  - Host theming, fullscreen, safe-area insets
-  - CSP domain declarations and app-only tools
-  - Graceful degradation for text-only clients
-  - Testing with the reference host
+  - Full view lifecycle (`ontoolinput`, `ontoolinputpartial`, `ontoolresult`,
+    `ontoolcancelled`, `onhostcontextchanged`, `onteardown`)
+  - **Talking to the model**: `updateModelContext`, `sendMessage`, reporting
+    runtime errors, `createSamplingMessage`, `openLink`, `sendLog`
+  - Host theming, fonts, safe-area insets, fullscreen, auto-resize
+  - CSP and CORS, including the `contents[]` placement trap
+  - Production patterns: polling, offscreen pause, chunked loading,
+    `viewUUID` state persistence, streaming input
+  - Testing with the reference host and with Claude Desktop
 
 ### Evaluation Guide (Load During Phase 5)
 - [✅ Evaluation Guide](./reference/evaluation.md) - Complete evaluation creation guide with:

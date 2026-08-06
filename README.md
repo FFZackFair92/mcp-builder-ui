@@ -48,10 +48,24 @@ view as a `ui://` resource; the host renders it in a sandboxed iframe inline in
 the conversation and exchanges JSON-RPC messages with it.
 
 The skill treats UI as **strictly additive**: every App tool keeps its text
-`content` fallback, so text-only hosts are never degraded. It also covers the
-things that silently break otherwise — single-file bundling, handler registration
-order, host CSS variables, CSP domain declarations, and `getUiCapability()`
-fallbacks.
+`content` fallback, so text-only hosts are never degraded.
+
+What it covers that a rendering tutorial doesn't:
+
+- **The conversational loop.** `updateModelContext` and `sendMessage`, so the model
+  knows what the user selected in the view. Without this, the user clicks a point
+  on your map, asks "what about this place?", and the model has no idea what
+  "this" is. This is the difference between an app and a picture.
+- **The silent failure modes.** `_meta.ui.csp` belongs in the `contents[]` objects
+  returned by the read callback, not in the config object — put it in the wrong
+  place and nothing errors, the app just can't reach the network. Same class of
+  trap: handlers registered after `connect()`, missing initial `getHostContext()`,
+  no `vite-plugin-singlefile`.
+- **Production patterns.** Polling, offscreen pause via `IntersectionObserver`,
+  chunked loading for payloads over host size limits, `viewUUID` state persistence,
+  streaming partial input.
+- **Signatures verified against the SDK sources**, not against prose docs — several
+  of which disagree with each other.
 
 Supported hosts include Claude, ChatGPT, VS Code, Goose, Postman and MCPJam.
 
